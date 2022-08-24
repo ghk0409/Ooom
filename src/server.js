@@ -1,3 +1,5 @@
+import http from "http";
+import WebSocket from "ws";
 import express from "express";
 
 const app = express();
@@ -11,9 +13,18 @@ app.use("/public", express.static(__dirname + "/public"));
 
 // Router 설정
 app.get("/", (req, res) => res.render("home"));
-// catchall url
+// catch all url
 app.get("/*", (req, res) => res.redirect("/"));
 
 const handleListen = () => console.log("Listening on http://localhost:3000");
 
-app.listen(3000, handleListen);
+/**
+ * HTTP 및 WebSocket 서버 동시 구동
+    : websocket 서버만 필요하다면 http 서버 없이 만들기
+ */
+// http 서버
+const server = http.createServer(app);
+// websocket 서버
+const wss = new WebSocket.Server({ server });
+
+server.listen(3000, handleListen);
