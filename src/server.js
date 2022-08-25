@@ -19,12 +19,26 @@ app.get("/*", (req, res) => res.redirect("/"));
 const handleListen = () => console.log("Listening on http://localhost:3000");
 
 /**
- * HTTP 및 WebSocket 서버 동시 구동
-    : websocket 서버만 필요하다면 http 서버 없이 만들기
- */
+* HTTP 및 WebSocket 서버 동시 구동
+: websocket 서버만 필요하다면 http 서버 없이 만들기
+*/
 // http 서버
 const server = http.createServer(app);
 // websocket 서버
 const wss = new WebSocket.Server({ server });
+
+// websocket event
+wss.on("connection", (socket) => {
+    console.log("Connected to Browser ✅");
+    // socket 연결이 끊겼을 때
+    socket.on("close", () => console.log("Disconnected from the Browser ❌"));
+    // socket message 받기
+    socket.on("message", (message) => {
+        console.log(message.toString());
+    });
+
+    // socket에 message 전송
+    socket.send("hello!!!");
+});
 
 server.listen(3000, handleListen);
