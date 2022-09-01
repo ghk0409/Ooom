@@ -27,18 +27,19 @@ const server = http.createServer(app);
 // websocket 서버
 const wss = new WebSocket.Server({ server });
 
+const sockets = [];
+
 // websocket event
 wss.on("connection", (socket) => {
+    sockets.push(socket);
     console.log("Connected to Browser ✅");
     // socket 연결이 끊겼을 때
     socket.on("close", () => console.log("Disconnected from the Browser ❌"));
     // socket message 받기
     socket.on("message", (message) => {
-        console.log(message.toString());
+        // socket에 message 전송
+        sockets.forEach((aSocket) => aSocket.send(message.toString()));
     });
-
-    // socket에 message 전송
-    socket.send("hello!!!");
 });
 
 server.listen(3000, handleListen);

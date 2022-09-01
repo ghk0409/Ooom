@@ -1,3 +1,5 @@
+const messgaeList = document.querySelector("ul");
+const messageForm = document.querySelector("form");
 // frontend websocket 연결
 const socket = new WebSocket(`ws://${window.location.host}`);
 
@@ -20,3 +22,12 @@ setTimeout(() => {
     // socket send message event
     socket.send("hello from the browser!!");
 }, 5000);
+
+function handleSubmit(event) {
+    event.preventDefault();
+    const input = messageForm.querySelector("input");
+    socket.send(input.value);
+    input.value = "";
+}
+
+messageForm.addEventListener("submit", handleSubmit);
