@@ -32,13 +32,35 @@ const sockets = [];
 // websocket event
 wss.on("connection", (socket) => {
     sockets.push(socket);
+    // non-nick client setting - Anonymous
+    socket["nickName"] = "Anonymous";
     console.log("Connected to Browser ✅");
     // socket 연결이 끊겼을 때
     socket.on("close", () => console.log("Disconnected from the Browser ❌"));
     // socket message 받기
-    socket.on("message", (message) => {
-        // socket에 message 전송
-        sockets.forEach((aSocket) => aSocket.send(message.toString()));
+    socket.on("message", (msg) => {
+        // string to json
+        const message = JSON.parse(msg);
+        // message type check
+        switch (message.type) {
+            case "new_message":
+                // socket에 message 전송
+                sockets.forEach((aSocket) =>
+                    aSocket.send(`${socket.nickName}: ${message.payload}`)
+                );
+                break;
+            case "nickName":
+                // socket property setting - nickName
+                socket["nickName"] = message.payload;
+                break;
+        }
+        // if (message.type === "new_message") {
+        //     sockets.forEach((aSocket) =>
+        //         aSocket.send(`${socket.nickName}: ${message.payload}`)
+        //     );
+        // } else if (message.type === "nickName") {
+        //     socket["nickName"] = message.payload;
+        // }
     });
 });
 
