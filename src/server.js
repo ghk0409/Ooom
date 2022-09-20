@@ -1,5 +1,5 @@
 import http from "http";
-import WebSocket from "ws";
+import SocketIO from "socket.io";
 import express from "express";
 
 const app = express();
@@ -18,50 +18,19 @@ app.get("/*", (req, res) => res.redirect("/"));
 
 const handleListen = () => console.log("Listening on http://localhost:3000");
 
-/**
-* HTTP 및 WebSocket 서버 동시 구동
-: websocket 서버만 필요하다면 http 서버 없이 만들기
-*/
 // http 서버
-const server = http.createServer(app);
-// websocket 서버
-const wss = new WebSocket.Server({ server });
+const httpServer = http.createServer(app);
+// socket.io 서버
+const wsServer = SocketIO(httpServer);
 
-const sockets = [];
-
-// websocket event
-wss.on("connection", (socket) => {
-    sockets.push(socket);
-    // non-nick client setting - Anonymous
-    socket["nickName"] = "Anonymous";
-    console.log("Connected to Browser ✅");
-    // socket 연결이 끊겼을 때
-    socket.on("close", () => console.log("Disconnected from the Browser ❌"));
-    // socket message 받기
-    socket.on("message", (msg) => {
-        // string to json
-        const message = JSON.parse(msg);
-        // message type check
-        switch (message.type) {
-            case "new_message":
-                // socket에 message 전송
-                sockets.forEach((aSocket) =>
-                    aSocket.send(`${socket.nickName}: ${message.payload}`)
-                );
-                break;
-            case "nickName":
-                // socket property setting - nickName
-                socket["nickName"] = message.payload;
-                break;
-        }
-        // if (message.type === "new_message") {
-        //     sockets.forEach((aSocket) =>
-        //         aSocket.send(`${socket.nickName}: ${message.payload}`)
-        //     );
-        // } else if (message.type === "nickName") {
-        //     socket["nickName"] = message.payload;
-        // }
+// socket.io connection
+wsServer.on("connection", (socket) => {
+    socket.on("enter_room", (msg, done) => {
+        console.log(msg);
+        setTimeout(() => {
+            done();
+        }, 5000);
     });
 });
 
-server.listen(3000, handleListen);
+httpServer.listen(3000, handleListen);
