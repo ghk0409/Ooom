@@ -25,11 +25,15 @@ const wsServer = SocketIO(httpServer);
 
 // socket.io connection
 wsServer.on("connection", (socket) => {
-    socket.on("enter_room", (msg, done) => {
-        console.log(msg);
-        setTimeout(() => {
-            done();
-        }, 5000);
+    // socket.onAny: Socket에 있는 모든 event 체크
+    socket.onAny((event) => {
+        console.log(`Socket Events: ${event}`);
+    });
+
+    socket.on("enter_room", (roomName, done) => {
+        socket.join(roomName); // room 생성 후 join
+        done();
+        socket.to(roomName).emit("welcome"); // send message in the room (Except Me)
     });
 });
 
