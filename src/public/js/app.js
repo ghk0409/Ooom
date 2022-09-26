@@ -30,12 +30,12 @@ const handleMessageSubmit = (event) => {
 };
 
 // Room 접속 폼 => Room 내 메시지 전송 폼 전환
-const showRoom = () => {
+const showRoom = (newCount) => {
     welcome.hidden = true;
     room.hidden = false;
     // setting room name
     const h3 = room.querySelector("h3");
-    h3.innerText = `[Room] ${roomName}`; // socket.emit은 비동기 처리로 roomName이 먼저 설정돼서 가능
+    h3.innerText = `[Room] ${roomName} (${newCount})`; // socket.emit은 비동기 처리로 roomName이 먼저 설정돼서 가능
     // setting nickname
     const h4 = room.querySelector("h4");
     h4.innerText = `[My Nickname] ${nickName}`;
@@ -62,25 +62,30 @@ const handleRoomSubmit = (event) => {
 form.addEventListener("submit", handleRoomSubmit);
 
 // Room 내 유저 입장 체크 (welcome event )
-socket.on("welcome", (user) => {
+socket.on("welcome", (user, newCount) => {
+    const h3 = room.querySelector("h3");
+    h3.innerText = `[Room] ${roomName} (${newCount})`;
     addMessage(`${user} joined!`);
 });
 
 // Room 내 유저 퇴장 체크 (bye event)
-socket.on("bye", (user) => {
+socket.on("bye", (user, newCount) => {
+    const h3 = room.querySelector("h3");
+    h3.innerText = `[Room] ${roomName} (${newCount})`;
     addMessage(`${user} left...`);
 });
 
 // Room 채팅 메시지 체크 (new_message event)
 socket.on("new_message", addMessage); // addMessage = (msg) => {addMessage(msg)}
 
+// 현재 Room 목록 표시
 socket.on("room_change", (rooms) => {
     const roomList = welcome.querySelector("ul");
     roomList.innerHTML = ""; // Room 리스트 중복 출력 방지를 위해 빈 값 초기화
     if (rooms.length === 0) {
         return;
     }
-
+    // Room 목록 출력
     rooms.forEach((room) => {
         const li = document.createElement("li");
         li.innerText = room;
