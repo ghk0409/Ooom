@@ -1,94 +1,78 @@
-const socket = io(); // 알아서 io 실행 중인 서버를 찾아서 연결
+const socket = io();
 
-const welcome = document.getElementById("welcome");
-const form = document.querySelector("#enterRoom");
-const room = document.getElementById("room");
+const myFace = document.getElementById("myFace");
+const muteBtn = document.getElementById("mute");
+const cameraBtn = document.getElementById("camera");
+const cameraList = document.getElementById("cameraList");
 
-// Room 접속 폼만 보이기
-room.hidden = true;
+let myStream;
+// 상태 확인용 변수 선언
+let muted = false;
+let camOff = false;
 
-let roomName;
-let nickName;
-
-// Message 출력 함수
-const addMessage = (msg) => {
-    const ul = room.querySelector("ul");
-    const li = document.createElement("li");
-    li.innerText = msg;
-    ul.appendChild(li);
-};
-
-// Room 채팅 출력 함수
-const handleMessageSubmit = (event) => {
-    event.preventDefault();
-    const input = room.querySelector("#msg input");
-    const msg = input.value;
-    socket.emit("new_message", input.value, roomName, () => {
-        addMessage(`You: ${msg}`);
-    });
-    input.value = "";
-};
-
-// Room 접속 폼 => Room 내 메시지 전송 폼 전환
-const showRoom = (newCount) => {
-    welcome.hidden = true;
-    room.hidden = false;
-    // setting room name
-    const h3 = room.querySelector("h3");
-    h3.innerText = `[Room] ${roomName} (${newCount})`; // socket.emit은 비동기 처리로 roomName이 먼저 설정돼서 가능
-    // setting nickname
-    const h4 = room.querySelector("h4");
-    h4.innerText = `[My Nickname] ${nickName}`;
-    // Room 내 채팅 이벤트 추가
-    const msgForm = room.querySelector("#msg");
-    msgForm.addEventListener("submit", handleMessageSubmit);
-};
-
-// Room 입장 핸들러
-const handleRoomSubmit = (event) => {
-    event.preventDefault();
-    const inputRoom = form.querySelector("#roomName");
-    const inputNickname = form.querySelector("#nickName");
-
-    // Room, Nickname 설정 후 입장
-    roomName = inputRoom.value;
-    nickName = inputNickname.value;
-    socket.emit("enter_room", roomName, nickName, showRoom);
-
-    inputRoom.value = "";
-    inputNickname.value = "";
-};
-
-form.addEventListener("submit", handleRoomSubmit);
-
-// Room 내 유저 입장 체크 (welcome event )
-socket.on("welcome", (user, newCount) => {
-    const h3 = room.querySelector("h3");
-    h3.innerText = `[Room] ${roomName} (${newCount})`;
-    addMessage(`${user} joined!`);
-});
-
-// Room 내 유저 퇴장 체크 (bye event)
-socket.on("bye", (user, newCount) => {
-    const h3 = room.querySelector("h3");
-    h3.innerText = `[Room] ${roomName} (${newCount})`;
-    addMessage(`${user} left...`);
-});
-
-// Room 채팅 메시지 체크 (new_message event)
-socket.on("new_message", addMessage); // addMessage = (msg) => {addMessage(msg)}
-
-// 현재 Room 목록 표시
-socket.on("room_change", (rooms) => {
-    const roomList = welcome.querySelector("ul");
-    roomList.innerHTML = ""; // Room 리스트 중복 출력 방지를 위해 빈 값 초기화
-    if (rooms.length === 0) {
-        return;
+// 카메라 선택 옵션 생성
+const getCameras = async () => {
+    try {
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        const cameras = devices.filter(
+            (device) => device.kind === "videoinput"
+        );
+        cameras.forEach((camera) => {
+            const option = document.createElement("option");
+            option.value = camera.deviceId;
+            option.innerText = camera.label;
+            cameraList.appendChild(option);
+        });
+    } catch (e) {
+        console.log(e);
     }
-    // Room 목록 출력
-    rooms.forEach((room) => {
-        const li = document.createElement("li");
-        li.innerText = room;
-        roomList.append(li);
-    });
-});
+};
+
+// 미디어 불러오기
+const getMedia = async () => {
+    try {
+        myStream = await navigator.mediaDevices.getUserMedia({
+            audio: true,
+            video: true,
+        });
+        myFace.srcObject = myStream;
+        // 카메라 목록으로부터 옵션 선택창 생성
+        await getCameras();
+    } catch (e) {
+        console.log(e);
+    }
+};
+
+// 미디어 연결 실행
+getMedia();
+
+// Mute 버튼 핸들러
+const handleMuteBtnClick = () => {
+    // 버튼 클릭 시, 모든 AudioTrack에 대해 상태 전환
+    myStream
+        .getAudioTracks()
+        .forEach((track) => (track.enabled = !track.enabled));
+    if (!muted) {
+        muteBtn.innerText = "Unmute";
+        muted = true;
+    } else {
+        muteBtn.innerText = "Mute";
+        muted = false;
+    }
+};
+// Camera On/Off 버튼 핸들러
+const handleCameraBtnClick = () => {
+    myStream
+        .getVideoTracks()
+        .forEach((track) => (track.enabled = !track.enabled));
+    if (!camOff) {
+        cameraBtn.innerText = "Turn Camera On";
+        camOff = true;
+    } else {
+        cameraBtn.innerText = "Turn Camera Off";
+        camOff = false;
+    }
+};
+
+muteBtn.addEventListener("click", handleMuteBtnClick);
+cameraBtn.addEventListener("click", handleCameraBtnClick);
