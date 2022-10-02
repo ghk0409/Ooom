@@ -17,10 +17,17 @@ const getCameras = async () => {
         const cameras = devices.filter(
             (device) => device.kind === "videoinput"
         );
+        // 현재 사용 중인 카메라 확인
+        const currentCamera = myStream.getVideoTracks()[0];
         cameras.forEach((camera) => {
             const option = document.createElement("option");
             option.value = camera.deviceId;
             option.innerText = camera.label;
+            // 현재 사용 중인 카메라를 select 하기
+            if (currentCamera.label == camera.label) {
+                option.selected = true;
+            }
+
             cameraList.appendChild(option);
         });
     } catch (e) {
@@ -29,15 +36,26 @@ const getCameras = async () => {
 };
 
 // 미디어 불러오기
-const getMedia = async () => {
+const getMedia = async (deviceId) => {
+    // 초기 설정
+    const initialConstraints = {
+        audio: true,
+        video: { facingMode: "user" },
+    };
+    // 유저 선택 카메라 설정
+    const cameraConstraints = {
+        audio: true,
+        video: { deviceId: { exact: deviceId } },
+    };
     try {
-        myStream = await navigator.mediaDevices.getUserMedia({
-            audio: true,
-            video: true,
-        });
+        myStream = await navigator.mediaDevices.getUserMedia(
+            deviceId ? cameraConstraints : initialConstraints
+        );
         myFace.srcObject = myStream;
-        // 카메라 목록으로부터 옵션 선택창 생성
-        await getCameras();
+        // 카메라 목록으로부터 옵션 선택창 생성 (초기 실행 시에만 생성)
+        if (!deviceId) {
+            await getCameras();
+        }
     } catch (e) {
         console.log(e);
     }
@@ -74,5 +92,11 @@ const handleCameraBtnClick = () => {
     }
 };
 
+// Camera 변경 감지
+const handleCameraChange = async () => {
+    await getMedia(cameraList.value);
+};
+
 muteBtn.addEventListener("click", handleMuteBtnClick);
 cameraBtn.addEventListener("click", handleCameraBtnClick);
+cameraList.addEventListener("input", handleCameraChange);
