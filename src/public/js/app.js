@@ -1,14 +1,22 @@
 const socket = io();
 
+// Media Area
+
 const myFace = document.getElementById("myFace");
 const muteBtn = document.getElementById("mute");
 const cameraBtn = document.getElementById("camera");
 const cameraList = document.getElementById("cameraList");
 
+const call = document.getElementById("call");
+
+// 첫 페이지 로드 시, 미디어 영역 숨기기
+call.hidden = true;
+
 let myStream;
 // 상태 확인용 변수 선언
 let muted = false;
 let camOff = false;
+let roomName;
 
 // 카메라 선택 옵션 생성
 const getCameras = async () => {
@@ -61,9 +69,6 @@ const getMedia = async (deviceId) => {
     }
 };
 
-// 미디어 연결 실행
-getMedia();
-
 // Mute 버튼 핸들러
 const handleMuteBtnClick = () => {
     // 버튼 클릭 시, 모든 AudioTrack에 대해 상태 전환
@@ -100,3 +105,36 @@ const handleCameraChange = async () => {
 muteBtn.addEventListener("click", handleMuteBtnClick);
 cameraBtn.addEventListener("click", handleCameraBtnClick);
 cameraList.addEventListener("input", handleCameraChange);
+
+/////////////////////////////////////////////////////////////////
+// Welcome Form (join a Room)
+
+const welcome = document.getElementById("welcome");
+welcomeForm = welcome.querySelector("form");
+
+const startMedia = () => {
+    // 룸 입장 폼 숨기기 + 미디어 영역 표시
+    welcome.hidden = true;
+    call.hidden = false;
+    // 미디어 (카메라, 마이크) 불러오기
+    getMedia();
+};
+
+// 룸 입장 버튼 핸들러
+const handleWelcomeSubmit = (e) => {
+    e.preventDefault();
+    const input = welcomeForm.querySelector("input");
+    roomName = input.value;
+    // 해당 룸 이름으로 입장
+    socket.emit("join_room", roomName, startMedia);
+    input.value = "";
+};
+
+welcomeForm.addEventListener("submit", handleWelcomeSubmit);
+
+// Socket Code
+
+// 특정 룸 입장 확인 (welcome event) -> WebRTC 연결
+socket.on("welcome", () => {
+    console.log("someone joined");
+});

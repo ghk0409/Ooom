@@ -10,11 +10,16 @@ html(lang="ko")
         header
             h1 Ooom 
         main
-            div#myStream
-                video#myFace(autoplay, playsinline, width="400", height="400")
-                button#mute Mute 
-                button#camera Turn Camera Off
-                select#cameraList
-                    option(value="c9f460f1f441c1138e1b7c63091154a2d7cc37b576e96096ff23b3efc44b451b") FaceTime Cam 
+            div#welcome
+                form
+                    input(placeholder="Room Name", required, type="text")
+                    button Enter Room
+            div#call
+                div#myStream
+                    video#myFace(autoplay, playsinline, width="400", height="400")
+                    button#mute Mute 
+                    button#camera Turn Camera Off
+                    select#cameraList
+                        option(value="c9f460f1f441c1138e1b7c63091154a2d7cc37b576e96096ff23b3efc44b451b") FaceTime Cam 
         script(src="/socket.io/socket.io.js")
         script(src="/public/js/app.js")
