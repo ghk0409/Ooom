@@ -17,6 +17,8 @@ let myStream;
 let muted = false;
 let camOff = false;
 let roomName;
+/** @type{RTCPeerConnection} */
+let myPeerConnection;
 
 // 카메라 선택 옵션 생성
 const getCameras = async () => {
@@ -112,21 +114,24 @@ cameraList.addEventListener("input", handleCameraChange);
 const welcome = document.getElementById("welcome");
 welcomeForm = welcome.querySelector("form");
 
-const startMedia = () => {
+const initCall = async () => {
     // 룸 입장 폼 숨기기 + 미디어 영역 표시
     welcome.hidden = true;
     call.hidden = false;
     // 미디어 (카메라, 마이크) 불러오기
-    getMedia();
+    await getMedia();
+    // RTC 커넥션 생성
+    makeConnection();
 };
 
 // 룸 입장 버튼 핸들러
-const handleWelcomeSubmit = (e) => {
+const handleWelcomeSubmit = async (e) => {
     e.preventDefault();
     const input = welcomeForm.querySelector("input");
+    await initCall();
     roomName = input.value;
     // 해당 룸 이름으로 입장
-    socket.emit("join_room", roomName, startMedia);
+    socket.emit("join_room", roomName);
     input.value = "";
 };
 
@@ -134,7 +139,40 @@ welcomeForm.addEventListener("submit", handleWelcomeSubmit);
 
 // Socket Code
 
-// 특정 룸 입장 확인 (welcome event) -> WebRTC 연결
-socket.on("welcome", () => {
-    console.log("someone joined");
+// 특정 룸 입장 확인 (welcome event) -> WebRTC 연결 주체인 offer 확인
+// Offer에서 실행됨 (Peer A)
+socket.on("welcome", async () => {
+    const offer = await myPeerConnection.createOffer();
+    // set local description
+    myPeerConnection.setLocalDescription(offer);
+    console.log("sent the offer");
+    // socketIO를 통해 offer 보내기
+    socket.emit("offer", offer, roomName);
 });
+
+// Offer 전달 받기 (Peer B)
+socket.on("offer", async (offer) => {
+    // remote description
+    myPeerConnection.setRemoteDescription(offer);
+    // answer 생성
+    const answer = await myPeerConnection.createAnswer();
+    console.log(answer);
+    myPeerConnection.setLocalDescription(answer);
+    socket.emit("answer", answer, roomName);
+});
+
+// Answer 전달 받기 (Peer A)
+socket.on("answer", (answer) => {
+    myPeerConnection.setRemoteDescription(answer);
+});
+
+// RTC Code
+// RTC 커넥션 생성 (== addStream())
+const makeConnection = () => {
+    // peer-to-peer connection 만들기
+    myPeerConnection = new RTCPeerConnection();
+    // 연결된 Peer들의 카메라/마이크(track) 데이터 steam을 RTC에 추가
+    myStream
+        .getTracks()
+        .forEach((track) => myPeerConnection.addTrack(track, myStream));
+};

@@ -21,10 +21,19 @@ const httpServer = http.createServer(app);
 const wsServer = new Server(httpServer);
 
 wsServer.on("connection", (socket) => {
-    socket.on("join_room", (roomName, done) => {
+    // 특정 룸 입장 시 이벤트
+    socket.on("join_room", (roomName) => {
         socket.join(roomName);
-        done();
         socket.to(roomName).emit("welcome");
+    });
+    // offer 수신 이벤트
+    socket.on("offer", (offer, roomName) => {
+        // 특정 룸 참가자에게 offer 전달
+        socket.to(roomName).emit("offer", offer);
+    });
+    // answer 수신 이벤트
+    socket.on("answer", (answer, roomName) => {
+        socket.to(roomName).emit("answer", answer);
     });
 });
 
