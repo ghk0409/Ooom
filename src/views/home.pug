@@ -21,5 +21,7 @@ html(lang="ko")
                     button#camera Turn Camera Off
                     select#cameraList
                         option(value="c9f460f1f441c1138e1b7c63091154a2d7cc37b576e96096ff23b3efc44b451b") FaceTime Cam 
+                div#peersStream
+                    video#peerFace(autoplay, playsinline, width="400", height="400")
         script(src="/socket.io/socket.io.js")
         script(src="/public/js/app.js")

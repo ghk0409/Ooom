@@ -152,18 +152,27 @@ socket.on("welcome", async () => {
 
 // Offer 전달 받기 (Peer B)
 socket.on("offer", async (offer) => {
+    console.log("received the offer");
     // remote description
     myPeerConnection.setRemoteDescription(offer);
     // answer 생성
     const answer = await myPeerConnection.createAnswer();
-    console.log(answer);
     myPeerConnection.setLocalDescription(answer);
+    // answer 전달
     socket.emit("answer", answer, roomName);
+    console.log("sent the answer");
 });
 
 // Answer 전달 받기 (Peer A)
 socket.on("answer", (answer) => {
+    console.log("received the answer");
     myPeerConnection.setRemoteDescription(answer);
+});
+
+// Ice candidate 전달 받기
+socket.on("ice", (ice) => {
+    console.log("received the candidate");
+    myPeerConnection.addIceCandidate(ice);
 });
 
 // RTC Code
@@ -171,8 +180,26 @@ socket.on("answer", (answer) => {
 const makeConnection = () => {
     // peer-to-peer connection 만들기
     myPeerConnection = new RTCPeerConnection();
+    // Icecandidate 설정
+    myPeerConnection.addEventListener("icecandidate", handleIce);
+    // add stream 이벤트 설정
+    // myPeerConnection.addEventListener("addstream", handleAddStream);
+    myPeerConnection.addEventListener("track", handleAddStream);
     // 연결된 Peer들의 카메라/마이크(track) 데이터 steam을 RTC에 추가
     myStream
         .getTracks()
         .forEach((track) => myPeerConnection.addTrack(track, myStream));
+};
+
+// ice candidate 전송 핸들러
+const handleIce = (data) => {
+    console.log("sent the candidate");
+    socket.emit("ice", data.candidate, roomName);
+};
+
+// add stream 핸들러
+const handleAddStream = (data) => {
+    const peerFace = document.getElementById("peerFace");
+    // peerFace.srcObject = data.stream;
+    peerFace.srcObject = data.streams[0];
 };

@@ -35,6 +35,10 @@ wsServer.on("connection", (socket) => {
     socket.on("answer", (answer, roomName) => {
         socket.to(roomName).emit("answer", answer);
     });
+    // Ice candidate 수신 이벤트
+    socket.on("ice", (ice, roomName) => {
+        socket.to(roomName).emit("ice", ice);
+    });
 });
 
 const handleListen = () => console.log("Listening on http://localhost:3000");
