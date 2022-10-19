@@ -62,6 +62,8 @@ const getMedia = async (deviceId) => {
             deviceId ? cameraConstraints : initialConstraints
         );
         myFace.srcObject = myStream;
+        myStream.getAudioTracks().forEach((track) => (track.enabled = !muted));
+        myStream.getVideoTracks().forEach((track) => (track.enabled = !camOff));
         // 카메라 목록으로부터 옵션 선택창 생성 (초기 실행 시에만 생성)
         if (!deviceId) {
             await getCameras();
@@ -102,6 +104,17 @@ const handleCameraBtnClick = () => {
 // Camera 변경 감지
 const handleCameraChange = async () => {
     await getMedia(cameraList.value);
+    // peer connection의 Stream 변경 감지
+    if (myPeerConnection) {
+        // 현재 선택된 비디오 트랙
+        const videoTrack = myStream.getVideoTracks()[0];
+        // peer에 보낼 비디오 트랙 관련 sender
+        const videoSenders = myPeerConnection
+            .getSenders()
+            .find((sender) => sender.track.kind === "video");
+        // peer에 보낼 비디오 sender의 트랙을 현재 선택된 비디오 트랙으로 교체
+        videoSenders.replaceTrack(videoTrack);
+    }
 };
 
 muteBtn.addEventListener("click", handleMuteBtnClick);
@@ -179,7 +192,20 @@ socket.on("ice", (ice) => {
 // RTC 커넥션 생성 (== addStream())
 const makeConnection = () => {
     // peer-to-peer connection 만들기
-    myPeerConnection = new RTCPeerConnection();
+    myPeerConnection = new RTCPeerConnection({
+        // 공용주소를 알아내기 위한 STUN 서버 사용
+        iceServers: [
+            {
+                urls: [
+                    "stun:stun.l.google.com:19302",
+                    "stun:stun1.l.google.com:19302",
+                    "stun:stun2.l.google.com:19302",
+                    "stun:stun3.l.google.com:19302",
+                    "stun:stun4.l.google.com:19302",
+                ],
+            },
+        ],
+    });
     // Icecandidate 설정
     myPeerConnection.addEventListener("icecandidate", handleIce);
     // add stream 이벤트 설정
