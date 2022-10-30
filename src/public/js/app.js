@@ -1,16 +1,18 @@
 const socket = io();
 
 // Media Area
-
 const myFace = document.getElementById("myFace");
 const muteBtn = document.getElementById("mute");
 const cameraBtn = document.getElementById("camera");
 const cameraList = document.getElementById("cameraList");
-
+// 비디오 스트림 영역
 const call = document.getElementById("call");
+// 채팅 영역
+const chat = document.getElementById("chat");
 
-// 첫 페이지 로드 시, 미디어 영역 숨기기
+// 첫 페이지 로드 시, 미디어 영역 + 채팅 영역 숨기기
 call.hidden = true;
+chat.hidden = true;
 
 let myStream;
 // 상태 확인용 변수 선언
@@ -129,9 +131,10 @@ const welcome = document.getElementById("welcome");
 welcomeForm = welcome.querySelector("form");
 
 const initCall = async () => {
-    // 룸 입장 폼 숨기기 + 미디어 영역 표시
+    // 룸 입장 폼 숨기기 + 미디어/채팅 영역 표시
     welcome.hidden = true;
     call.hidden = false;
+    chat.hidden = false;
     // 미디어 (카메라, 마이크) 불러오기
     await getMedia();
     // RTC 커넥션 생성
