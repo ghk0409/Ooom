@@ -19,6 +19,7 @@ let camOff = false;
 let roomName;
 /** @type{RTCPeerConnection} */
 let myPeerConnection;
+let myDataChannel;
 
 // 카메라 선택 옵션 생성
 const getCameras = async () => {
@@ -155,6 +156,12 @@ welcomeForm.addEventListener("submit", handleWelcomeSubmit);
 // 특정 룸 입장 확인 (welcome event) -> WebRTC 연결 주체인 offer 확인
 // Offer에서 실행됨 (Peer A)
 socket.on("welcome", async () => {
+    // DataChannel offer 생성
+    myDataChannel = myPeerConnection.createDataChannel("chat");
+    myDataChannel.addEventListener("message", (event) => {
+        console.log(event.data);
+    });
+    console.log("make data channel!");
     const offer = await myPeerConnection.createOffer();
     // set local description
     myPeerConnection.setLocalDescription(offer);
@@ -165,6 +172,12 @@ socket.on("welcome", async () => {
 
 // Offer 전달 받기 (Peer B)
 socket.on("offer", async (offer) => {
+    myPeerConnection.addEventListener("datachannel", (event) => {
+        myDataChannel = event.channel;
+        myDataChannel.addEventListener("message", (event) => {
+            console.log(event.data);
+        });
+    });
     console.log("received the offer");
     // remote description
     myPeerConnection.setRemoteDescription(offer);
@@ -186,6 +199,19 @@ socket.on("answer", (answer) => {
 socket.on("ice", (ice) => {
     console.log("received the candidate");
     myPeerConnection.addIceCandidate(ice);
+});
+
+// peer 연결 해제 받기
+socket.on("leave_user", async () => {
+    try {
+        // WebRTC 연결해제
+        myPeerConnection.close();
+    } catch (e) {
+        console.log(e);
+    }
+
+    await getMedia();
+    makeConnection();
 });
 
 // RTC Code
