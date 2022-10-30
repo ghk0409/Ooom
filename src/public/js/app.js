@@ -255,3 +255,5 @@ const handleAddStream = (data) => {
     // peerFace.srcObject = data.stream;
     peerFace.srcObject = data.streams[0];
 };
+
+//* 채팅기능 구현 추가하기
