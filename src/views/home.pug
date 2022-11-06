@@ -25,6 +25,9 @@ html(lang="ko")
                     div#peersStream
                         video#peerFace(autoplay, playsinline, width="400", height="400")
                 div#chat
-                    textarea(placeholder="Chat Chat Chat", required)
+                    form#chat__form
+                        textarea(placeholder="Chat Chat Chat", required)
+                        button Send
+                    ul
         script(src="/socket.io/socket.io.js")
         script(src="/public/js/app.js")

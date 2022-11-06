@@ -9,6 +9,9 @@ const cameraList = document.getElementById("cameraList");
 const call = document.getElementById("call");
 // 채팅 영역
 const chat = document.getElementById("chat");
+const chatForm = document.getElementById("chat__form");
+const chatText = chatForm.querySelector("textarea");
+const chatBtn = chatForm.querySelector("button");
 
 // 첫 페이지 로드 시, 미디어 영역 + 채팅 영역 숨기기
 call.hidden = true;
@@ -124,9 +127,7 @@ muteBtn.addEventListener("click", handleMuteBtnClick);
 cameraBtn.addEventListener("click", handleCameraBtnClick);
 cameraList.addEventListener("input", handleCameraChange);
 
-/////////////////////////////////////////////////////////////////
-// Welcome Form (join a Room)
-
+// * Welcome Form (join a Room)
 const welcome = document.getElementById("welcome");
 welcomeForm = welcome.querySelector("form");
 
@@ -154,7 +155,7 @@ const handleWelcomeSubmit = async (e) => {
 
 welcomeForm.addEventListener("submit", handleWelcomeSubmit);
 
-// Socket Code
+// * Socket Code
 
 // 특정 룸 입장 확인 (welcome event) -> WebRTC 연결 주체인 offer 확인
 // Offer에서 실행됨 (Peer A)
@@ -162,7 +163,7 @@ socket.on("welcome", async () => {
     // DataChannel offer 생성
     myDataChannel = myPeerConnection.createDataChannel("chat");
     myDataChannel.addEventListener("message", (event) => {
-        console.log(event.data);
+        addMessage(event.data, "상대방");
     });
     console.log("make data channel!");
     const offer = await myPeerConnection.createOffer();
@@ -178,7 +179,7 @@ socket.on("offer", async (offer) => {
     myPeerConnection.addEventListener("datachannel", (event) => {
         myDataChannel = event.channel;
         myDataChannel.addEventListener("message", (event) => {
-            console.log(event.data);
+            addMessage(event.data, "상대방");
         });
     });
     console.log("received the offer");
@@ -259,4 +260,48 @@ const handleAddStream = (data) => {
     peerFace.srcObject = data.streams[0];
 };
 
-//* 채팅기능 구현 추가하기
+// * 채팅기능
+// 메시지 출력 메서드
+const addMessage = (msg, nickname) => {
+    const ul = chat.querySelector("ul");
+    const li = document.createElement("li");
+    li.innerText = `${nickname}: ${msg}`;
+    ul.appendChild(li);
+    console.log(`${nickname}: ${msg}`);
+};
+
+// 전송 버튼 비활성화 (입력된 값이 있을 때만 활성화 시키기)
+chatBtn.disabled = true;
+
+// 텍스트 입력 활성 시, placeholder 제거
+const handleTextareaFocusIn = () => {
+    chatText.placeholder = "";
+};
+// 텍스트 입력 비활성 시, placeholder 재설정
+const handleTextareaFocusOut = () => {
+    chatText.placeholder = "chat chat chat";
+};
+
+// 채팅 메시지 버튼 활성화 핸들러
+const handleBtnAble = () => {
+    chatBtn.disabled = chatText.value.trim() === "" ? true : false;
+};
+
+// 채팅 전송 핸들러
+const handleSubmitChat = (e) => {
+    e.preventDefault();
+
+    const message = chatText.value;
+
+    chatText.value = "";
+    chatBtn.disabled = true;
+    myDataChannel.send(message);
+
+    // 메시지 전송
+    addMessage(message, "나");
+};
+
+chatText.addEventListener("focusin", handleTextareaFocusIn);
+chatText.addEventListener("focusout", handleTextareaFocusOut);
+chatText.addEventListener("input", handleBtnAble);
+chatForm.addEventListener("submit", handleSubmitChat);
